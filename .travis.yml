@@ -1,0 +1,26 @@
+language: php
+php:
+  - 5.6
+  - 7.0
+  - 7.1
+matrix:
+  fast_finish: true
+sudo: false
+cache:
+  directories:
+  - "$HOME/.composer/cache"
+before_install:
+  - if [[ $TRAVIS_PHP_VERSION != 7.1 ]] ; then phpenv config-rm xdebug.ini; fi
+  - travis_retry composer self-update
+  - composer require squizlabs/php_codesniffer
+install:
+  - travis_retry composer install --no-interaction --prefer-dist --no-suggest
+script:
+  - vendor/bin/phpunit
+  - ./vendor/bin/phpcs --ignore=*/migrations/* --extensions=php --standard=PSR2 src --report=summary -n
+notifications:
+  slack:
+    rooms:
+      secure: kO7kPm8lsdor5Zg5OlkQaKMEMaNypWj7DOTMUdiq7Y+B5gWgmYDKdDKbi1n6wk5VaUVKsV30TLbwj6cEAxz9/rn7vI5McfyxIuJ6B1nql7vptuT5cRewiKEwSfeZDBhrK4WQEIh6f1t5w9RWqC7hcrbnc/WtSZtSQH/otSHKEUI1AiWnpvbSPK4F/u0CafaW+oEHsrpvhuLmiNiPejCDVy/gKtTodM31/crCEIwWSkKnL2i7aWkIbtjeBswdLNElVJgaJzkTw9EW60flYaWvcN45usiixzqKGd2w11+/oHY0qmpSrYMgLlYTo34AaeYSYgijAdbLb/QSCBT+/CEqTANSOVcwrCZMr31DTMmIEJ0/rdREcxCOSZdPqwb/jIPZXy1b6XbUKhHyyQSLu2wb3eCdhw7dWpPBo5/tfwaLcccb3UfuQ9tDQgwmg1IIsU/1RwlNWEyX8ZRT5P9fGn51+EOtpFwKPYyRywDB4f3g4xclpVlzLdy451d2xnQA6eWC3o6w54V1WUZkRAKZ1jDql58gmm0aZCXUGap+do7F/1vcoFYrdkIZKOiIpu4Fz7793xdrAffI/ct7EJnbUKlgVQO59RF4M93+gQjvcesNx0W3UCVha02ixYD40utjmS4zfXpxVRrISKL3Bc2safvoYKViRIB7swlePOGjLl99elE=
+    on_success: change
+    on_failure: change

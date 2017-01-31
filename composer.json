@@ -1,0 +1,36 @@
+{
+  "name": "hatchly/google-analytics",
+  "description": "Google Analytics Module for Hatchly",
+  "keywords": ["hatchly", "netsells", "google", "analytics"],
+  "license": "Hatchly PSL",
+  "homepage": "https://hatchly.io",
+  "authors": [
+    {
+      "name": "Sam Jordan",
+      "email": "sam@netsells.co.uk"
+    }
+  ],
+  "repositories": [
+    {"type": "composer", "url": "https://packages.hatchly.io/repo/private/"}
+  ],
+  "require": {
+
+  },
+  "require-dev": {
+    "phpunit/phpunit": "~5.4",
+    "mockery/mockery": "~0.9",
+    "hatchly/platform": "dev-master",
+    "laravel/laravel": "5.3.*"
+  },
+  "autoload": {
+    "files": [
+      "src/Hatchly/GoogleAnalytics/helpers.php"
+    ],
+    "psr-4": {
+      "Hatchly\\": "src/Hatchly/"
+    }
+  },
+  "autoload-dev": {
+    "classmap": [ "tests/TestCase.php" ]
+  }
+}
