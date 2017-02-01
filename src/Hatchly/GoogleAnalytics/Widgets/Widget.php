@@ -16,7 +16,9 @@ abstract class Widget extends BaseWidget
 
     public function getAdminStyles()
     {
-        return [];
+        return [
+        	asset('css/admin/app.min.css'),
+        ];
     }
 
     public function getAdminScripts()

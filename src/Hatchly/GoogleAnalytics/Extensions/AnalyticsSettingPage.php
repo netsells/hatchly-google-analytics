@@ -13,6 +13,6 @@ class AnalyticsSettingPage implements SettingPageInterface
 
     public function title()
     {
-        return 'Analytics';
+        return 'Google Analytics';
     }
 }

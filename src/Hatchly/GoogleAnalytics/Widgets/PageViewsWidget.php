@@ -6,6 +6,10 @@ class PageViewsWidget extends Widget
 {
     public function view()
     {
-        return 'blade file';
+        $this->analyticsService->fetch();
+
+        dd($this->analyticsService);
+
+        return view('hatchly-analytics::widgets.page-views.view', ['analytics' => $this->analyticsService]);
     }
 }
