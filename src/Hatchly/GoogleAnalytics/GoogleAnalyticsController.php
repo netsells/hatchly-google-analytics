@@ -23,16 +23,20 @@ class GoogleAnalyticsController extends BaseController
         $analyticsSettingsPage = config('hatchly.core.admin-url') . '/settings/analytics';
         $authCode = $request->get('code') ? $request->get('code') : '';
 
-        $settingAuth = Setting::firstOrNew(['key' => 'analytics.oauth-authorisation-code']);
-        $settingAuth->value = $authCode;
-        $settingAuth->save();
+        $setting = Setting::firstOrNew(['key' => 'analytics.oauth-authorisation-code']);
+        $setting->value = $authCode;
+        $setting->save();
 
-        $this->analyticsService->triggerLogin();
+        $setting = Setting::firstOrNew(['key' => 'analytics.oauth-authenticated']);
 
         if (!empty($authCode)) {
+            $setting->value = 1;
+            $setting->save();
             return redirect($analyticsSettingsPage)
                 ->withSuccesses('OAuth 2 authorisation code has been set successfully');
         } else {
+            $setting->value = 0;
+            $setting->save();
             return redirect($analyticsSettingsPage)
                 ->withNotices('OAuth 2 authorisation code was not provided');
         }
@@ -42,14 +46,6 @@ class GoogleAnalyticsController extends BaseController
     public function deauth()
     {
         $this->analyticsService->deauthorise();
-
-        $settingAuth = Setting::firstOrNew(['key' => 'analytics.oauth-authorisation-code']);
-        $settingAuth->value = '';
-        $settingAuth->save();
-
-        $settingAuth = Setting::firstOrNew(['key' => 'analytics.oauth-token']);
-        $settingAuth->value = '';
-        $settingAuth->save();
 
         return redirect()->back()->withSuccesses('Deauthorised the app successfully');
     }

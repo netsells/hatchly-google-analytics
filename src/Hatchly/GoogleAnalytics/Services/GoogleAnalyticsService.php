@@ -4,6 +4,7 @@ namespace Hatchly\GoogleAnalytics\Services;
 
 use Cache, Exception, Google_Client, Google_Service_Analytics;
 use Hatchly\Settings\Setting;
+use Illuminate\Support\Facades\URL;
 
 class GoogleAnalyticsService
 {
@@ -12,123 +13,160 @@ class GoogleAnalyticsService
     public $yesterday;
     public $today;
     public $exception;
+    public $error;
 
     protected $client;
     protected $analytics;
     protected $token;
 
-    public function fetch()
+    // Returns a list of analytics profiles on the connected account
+    // Returns empty array if no profiles found
+    public function getProfiles()
     {
+        $this->makeClient();
+
+        $profileList = [];
+
         try {
-            $this->month = $this->getPageViews('month', '30daysAgo', 'today');
-            $this->week = $this->getPageViews('week', '7daysAgo', 'today');
-            $this->yesterday = $this->getPageViews('yesterday', 'yesterday', 'today');
-            $this->today = $this->getPageViews('today', 'today', 'today');
-            return $this;
-        } catch (Exception $e) {
-            $this->exception = $e;
-            return $this;
+            $accounts = $this->analytics->management_accounts->listManagementAccounts();
+            foreach ($accounts->getItems() as $account) {
+                $accountId = $account->getId();
+                $properties = $this->analytics->management_webproperties->listManagementWebproperties($accountId);
+                foreach ($properties->getItems() as $property) {
+                    $propertyId = $property->getId();
+                    $profiles = $this->analytics->management_profiles->listManagementProfiles($accountId, $propertyId);
+                    foreach ($profiles->getItems() as $profile) {
+                        $profileList[$profile->id] = $profile->name;
+                    }
+                }
+            }
+        } catch(Exception $e) {
+            $this->error = $e->getMessage();
+            return $profileList;
         }
+
+        if (!$profileList) {
+            $this->error = 'No Google Analytics profiles were found';
+        }
+
+        return $profileList;
     }
 
+
+    public function fetchStats()
+    {
+        try {
+            $this->month = $this->getStats('month', '30daysAgo', 'today');
+            $this->week = $this->getStats('week', '7daysAgo', 'today');
+            $this->yesterday = $this->getStats('yesterday', 'yesterday', 'today');
+            $this->today = $this->getStats('today', 'today', 'today');
+        } catch (Exception $e) {
+            $this->error = $e;
+        }
+        return $this;
+    }
+
+    // Get the URL to request authorisation for OAuth 2
     public function getAuthUrl()
     {
-        $this->makeClient(true);
+        $this->makeClient();
         return $this->client->createAuthUrl();
     }
 
+    // Revokes OAuth 2 token and deletes auth code
     public function deauthorise()
     {
         $this->makeClient();
         $this->client->revokeToken();
+
+        Setting::find([
+            'analytics.oauth-authenticated',
+            'analytics.oauth-authorisation-code',
+            'analytics.oauth-token'
+        ])->each(function ($item, $key) {
+            $item->delete();
+        });
     }
 
-    public function triggerLogin()
+    // Gets the profile ID from settings
+    private function getProfileId()
     {
-        $this->makeClient();
-    }
-
-    private function getFirstProfileId()
-    {
-        $accounts = $this->analytics->management_accounts->listManagementAccounts();
-
-        if (count($accounts->getItems()) > 0) {
-            $items = $accounts->getItems();
-            $firstAccountId = $items[0]->getId();
-
-            $properties = $this->analytics->management_webproperties->listManagementWebproperties($firstAccountId);
-
-            if (count($properties) > 0) {
-                $items = $properties->getItems();
-                $firstPropertyId = $items[0]->getId();
-
-                $profiles = $this->analytics->management_profiles->listManagementProfiles($firstAccountId, $firstPropertyId);
-
-                if (count($profiles->getItems()) > 0) {
-                    $items = $profiles->getItems();
-
-                    return $items[0]->getId();
-                } else {
-                    throw new Exception("No Google Analytics views (profiles) found for this user.");
-                }
-            } else {
-                throw new Exception("No Google Analytics properties found for this user.");
-            }
-        } else {
-            throw new Exception("No Google Analytics accounts found for this user.");
+        $profileId = setting('analytics.analytics-profile');
+        if (!$profileId) {
+            $this->error = 'Please select a profile from the Hatchly Google Analytics settings page';
         }
+        return $profileId;
     }
 
-    private function makeClient($skipTokenCheck = false)
+    // Create Google API client and request token if necessary
+    private function makeClient()
     {
-        $this->client = new Google_Client();
-        $this->client->addScope(Google_Service_Analytics::ANALYTICS_READONLY);
-        // TODO: Make the below hard coded values dynamic
-        $this->client->setAuthConfig(base_path('gapi-client.json'));
-        $this->client->setApplicationName('Hatchly Google Analytics');
-        $this->client->setRedirectUri('http://hatchly.dev/admin/settings/analytics/oauth');
-        $this->analytics = new Google_Service_Analytics($this->client);
-
-        if ($skipTokenCheck) {
+        if ($this->client) {
             return;
         }
 
-        $settingAuth = Setting::firstOrNew(['key' => 'analytics.oauth-authorisation-code']);
-        $settingToken = Setting::firstOrNew(['key' => 'analytics.oauth-token']);
+        $this->client = new Google_Client();
+        $this->client->addScope(Google_Service_Analytics::ANALYTICS_READONLY);
+        $this->client->setAuthConfig(base_path('gapi-client.json'));
+        $this->client->setApplicationName('Hatchly Google Analytics');
+        $this->client->setRedirectUri(
+            URL::to(config('hatchly.core.admin-url') . '/settings/analytics/oauth')
+        );
 
-        // Manage access token
-        if ($settingAuth && $settingAuth->value) {
-            if ($settingToken && $settingToken->value) {
+        $this->analytics = new Google_Service_Analytics($this->client);
+
+        $authCode = setting('analytics.oauth-authorisation-code');
+        if (!$authCode) {
+            // Not yet logged in
+            return;
+        }
+        
+        // Handle token request/refresh
+        try {
+            $settingToken = Setting::firstOrNew(['key' => 'analytics.oauth-token']);
+            if ($settingToken->value) {
                 if ($this->client->isAccessTokenExpired()) {
                     $token = $this->client->fetchAccessTokenWithRefreshToken($settingToken->value);
-                    if (isset($token['access_token'])) {
-                        $settingToken->value = json_encode($token);
-                        $settingToken->save();
-                    }
                 }
             } else {
-                $token = $this->client->fetchAccessTokenWithAuthCode($settingAuth->value);
-                if (isset($token['access_token'])) {
-                    $settingToken->value = json_encode($token);
-                    $settingToken->save();
-                }
+                $token = $this->client->fetchAccessTokenWithAuthCode($authCode);
+            }
+            if (isset($token['access_token'])) {
+                // TODO: Investigate how/where this should be stored.
+                // It probably doesn't need to be a Setting
+                $settingToken->value = json_encode($token);
+                $settingToken->save();
             }
             if ($settingToken->value) {
-                json_decode($this->client->setAccessToken($settingToken->value));
+                $this->client->setAccessToken($settingToken->value);
             }
+        } catch(Exception $e) {
+            $this->error = $e->getMessage();
         }
     }
 
-    protected function getPageViews($type, $end, $start)
+    protected function getStats($type, $end, $start)
     {
         $class = $this;
 
         return Cache::remember('ga-' . $type, 120, function () use ($class, $start, $end) {
 
             $class->makeClient();
-            $firstProfileId = $class->getFirstProfileId();
 
-            return $this->analytics->data_ga->get('ga:' . $firstProfileId, $end, $start, 'ga:users')->getRows()[0][0];
+            $profileId = $this->getProfileId();
+            if (!$profileId) {
+                return 0;
+            }
+
+            $metrics = 'ga:sessions,ga:users,ga:pageviews,ga:bounceRate,ga:organicSearches,ga:pageviewsPerSession,ga:avgTimeOnPage,ga:avgPageLoadTime,ga:avgSessionDuration';
+            $keys = explode(',', str_replace('ga:', '', $metrics));
+            // ['dimensions' => 'ga:day']
+            $rows = $this->analytics->data_ga->get('ga:' . $profileId, $end, $start, $metrics)->getRows();
+            foreach ($rows[0] as $i => $row) {
+                $data[$keys[$i]] = is_float(+$row) ? number_format($row, 2) : number_format($row);
+            }
+            return $data;
+
         });
     }
 }

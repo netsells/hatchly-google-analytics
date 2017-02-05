@@ -5,9 +5,17 @@ namespace Hatchly\GoogleAnalytics\Extensions;
 use Hatchly\Settings\ExtensionableInterfaces\BaseSetting;
 use Hatchly\Settings\ExtensionableInterfaces\SettingInterface;
 use Hatchly\Settings\Setting;
+use Hatchly\GoogleAnalytics\Services\GoogleAnalyticsService;
 
-class OauthAuthorisationCodeSetting extends BaseSetting implements SettingInterface
+class OauthAuthenticatedSetting extends BaseSetting implements SettingInterface
 {
+    public $analyticsService;
+
+    public function __construct(GoogleAnalyticsService $analyticsService)
+    {
+        $this->analyticsService = $analyticsService;
+    }
+
     public function pageKey()
     {
         return 'analytics';
@@ -15,12 +23,12 @@ class OauthAuthorisationCodeSetting extends BaseSetting implements SettingInterf
 
     public function extensionableKey()
     {
-        return 'analytics.oauth-authorisation-code';
+        return 'analytics.oauth-authenticated';
     }
 
     public function viewPath()
     {
-        return 'hatchly-analytics::extensions.settings.oauth-authorisation-code.view';
+        return 'hatchly-analytics::extensions.settings.oauth-authenticated.view';
     }
 
     public function defaultValue()
