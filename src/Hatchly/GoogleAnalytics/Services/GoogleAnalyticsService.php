@@ -84,7 +84,7 @@ class GoogleAnalyticsService
         $this->client = new Google_Client();
         $this->client->addScope(Google_Service_Analytics::ANALYTICS_READONLY);
         // TODO: Make the below hard coded values dynamic
-        $this->client->setAuthConfig(__DIR__.'/../authconfig.json');
+        $this->client->setAuthConfig(base_path('gapi-client.json'));
         $this->client->setApplicationName('Hatchly Google Analytics');
         $this->client->setRedirectUri('http://hatchly.dev/admin/settings/analytics/oauth');
         $this->analytics = new Google_Service_Analytics($this->client);
