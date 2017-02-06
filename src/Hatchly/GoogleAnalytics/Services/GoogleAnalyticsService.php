@@ -8,16 +8,33 @@ use Illuminate\Support\Facades\URL;
 
 class GoogleAnalyticsService
 {
-    public $month;
-    public $week;
-    public $yesterday;
-    public $today;
-    public $exception;
-    public $error;
+    public $metrics = [
+        'Sessions' => 'sessions',
+        'Users' => 'users',
+        'Page Views' => 'pageviews',
+        'Bounce Rate' => 'bounceRate',
+        'Organic Searches' => 'organicSearches',
+        'Views Per Session' => 'pageviewsPerSession',
+        'Time On Page' => 'avgTimeOnPage',
+        'Page Load Time' => 'avgPageLoadTime',
+        'Session Duration' => 'avgSessionDuration',
+    ];
 
     protected $client;
     protected $analytics;
-    protected $token;
+    protected $error;
+
+    public function getError()
+    {
+        if ($this->error) {
+            // Check if the error is in JSON format
+            if (($errorJson = json_decode($this->error)) !== null) {
+                return isset($errorJson->error->message) ? $errorJson->error->message : 'An unexpected error occurred';
+            }
+            return $this->error;
+        }
+        return '';
+    }
 
     // Returns a list of analytics profiles on the connected account
     // Returns empty array if no profiles found
@@ -55,15 +72,12 @@ class GoogleAnalyticsService
 
     public function fetchStats()
     {
-        try {
-            $this->month = $this->getStats('month', '30daysAgo', 'today');
-            $this->week = $this->getStats('week', '7daysAgo', 'today');
-            $this->yesterday = $this->getStats('yesterday', 'yesterday', 'today');
-            $this->today = $this->getStats('today', 'today', 'today');
-        } catch (Exception $e) {
-            $this->error = $e;
-        }
-        return $this;
+        return [
+            'This Month' => $this->getStats('month', '30daysAgo', 'today', $this->metrics),
+            'This Week' => $this->getStats('week', '7daysAgo', 'today', $this->metrics),
+            'Yesterday' => $this->getStats('yesterday', 'yesterday', 'today', $this->metrics),
+            'Today' => $this->getStats('today', 'today', 'today', $this->metrics),
+        ];
     }
 
     // Get the URL to request authorisation for OAuth 2
@@ -145,28 +159,43 @@ class GoogleAnalyticsService
         }
     }
 
-    protected function getStats($type, $end, $start)
+    // $type is a descriptive name for caching
+    // $start and $end define the time/date range to be retrieved
+    // $metrics is an array of analytics metrics to retrieve
+    protected function getStats($type, $end, $start, $metrics)
     {
         $class = $this;
-
-        return Cache::remember('ga-' . $type, 120, function () use ($class, $start, $end) {
-
+        $getData = function () use ($class, $start, $end, $metrics) {
             $class->makeClient();
 
             $profileId = $this->getProfileId();
             if (!$profileId) {
-                return 0;
+                return [];
             }
 
-            $metrics = 'ga:sessions,ga:users,ga:pageviews,ga:bounceRate,ga:organicSearches,ga:pageviewsPerSession,ga:avgTimeOnPage,ga:avgPageLoadTime,ga:avgSessionDuration';
-            $keys = explode(',', str_replace('ga:', '', $metrics));
             // ['dimensions' => 'ga:day']
-            $rows = $this->analytics->data_ga->get('ga:' . $profileId, $end, $start, $metrics)->getRows();
-            foreach ($rows[0] as $i => $row) {
-                $data[$keys[$i]] = is_float(+$row) ? number_format($row, 2) : number_format($row);
-            }
-            return $data;
+            $metrics = 'ga:' . implode(',ga:', $metrics);
 
-        });
+            // Attempt to retrieve analytics data
+            try {
+                $rows = $class->analytics->data_ga->get('ga:' . $profileId, $end, $start, $metrics)->getRows();
+            } catch(Exception $e) {
+                $class->error = $e->getMessage();
+            }
+
+            // Organise the data returned into a nicer format
+            foreach ($rows[0] as $i => $row) {
+                $metrics = array_values($class->metrics);
+                $data[$metrics[$i]] = is_float(+$row) ? number_format($row, 2) : number_format($row);
+            }
+
+            return $data;
+        };
+
+        if (setting('analytics.cache-duration')) {
+            return Cache::remember('ga---' . $type, setting('analytics.cache-duration'), $getData);
+        } else {
+            return $getData();
+        }
     }
 }

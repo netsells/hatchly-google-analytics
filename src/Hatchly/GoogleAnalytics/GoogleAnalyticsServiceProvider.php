@@ -33,6 +33,8 @@ class GoogleAnalyticsServiceProvider extends ServiceProvider
                     'Hatchly\GoogleAnalytics\Extensions\OauthTokenSetting'));
                 SettingModule::registerSettingExtension($app->make(
                     'Hatchly\GoogleAnalytics\Extensions\AnalyticsProfileSetting'));
+                SettingModule::registerSettingExtension($app->make(
+                    'Hatchly\GoogleAnalytics\Extensions\CacheDurationSetting'));
             }
         });
     }

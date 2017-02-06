@@ -25,11 +25,10 @@ Hatchly\GoogleAnalytics\GoogleAnalyticsModule::class
 
 ### Usage
 
-Go to Settings > Google Analytics in the admin area and follow the instructions to link your google account with the install of Hatchly.
+Go to `Settings > Google Analytics` in the admin area and follow the instructions to link your Google account with the install of Hatchly. Once you have linked your Google account, select a `Google Analytics Profile` from the same page and `Save Changes`.
 
-Once setup, you can begin adding modules to your dashboard. The following modules are available to add any number of times in the `config/hatchly/core.php` dashboard-widgets array. 
+Once setup, you can begin adding widgets to your dashboard. The following widgets are available to add any number of times in the `config/hatchly/core.php` dashboard-widgets array.
 
 ```php
-Hatchly\GoogleAnalytics\Widgets\PageViewsWidget::class,
-Hatchly\GoogleAnalytics\Widgets\SessionsWidget::class,
+Hatchly\GoogleAnalytics\Widgets\StatsWidget::class,
 ```

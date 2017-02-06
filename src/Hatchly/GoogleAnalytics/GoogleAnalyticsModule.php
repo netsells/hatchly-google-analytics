@@ -3,6 +3,9 @@
 namespace Hatchly\GoogleAnalytics;
 
 use Hatchly\Core\Modules\Module;
+use Hatchly\Core\Modules\Permissions\Permission;
+use Hatchly\Core\Modules\Permissions\PermissionModule;
+use Hatchly\Core\Modules\Permissions\PermissionGroup;
 
 class GoogleAnalyticsModule extends Module
 {

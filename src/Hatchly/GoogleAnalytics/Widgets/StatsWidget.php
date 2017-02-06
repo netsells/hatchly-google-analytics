@@ -1,0 +1,15 @@
+<?php
+
+namespace Hatchly\GoogleAnalytics\Widgets;
+
+class StatsWidget extends Widget
+{
+    public function view()
+    {
+        return view('hatchly-analytics::widgets.stats.view', [
+            'metrics' => $this->analyticsService->metrics,
+            'stats' => $this->analyticsService->fetchStats(),
+            'error' => $this->analyticsService->getError(),
+        ]);
+    }
+}
