@@ -2,7 +2,10 @@
 
 namespace Hatchly\GoogleAnalytics\Services;
 
-use Cache, Exception, Google_Client, Google_Service_Analytics;
+use Cache;
+use Exception;
+use Google_Client;
+use Google_Service_Analytics;
 use Hatchly\Settings\Setting;
 use Illuminate\Support\Facades\URL;
 
@@ -27,10 +30,13 @@ class GoogleAnalyticsService
     public function getError()
     {
         if ($this->error) {
+
             // Check if the error is in JSON format
             if (($errorJson = json_decode($this->error)) !== null) {
+
                 return isset($errorJson->error->message) ? $errorJson->error->message : 'An unexpected error occurred';
             }
+
             return $this->error;
         }
         return '';
@@ -45,24 +51,33 @@ class GoogleAnalyticsService
         $profileList = [];
 
         try {
+
             $accounts = $this->analytics->management_accounts->listManagementAccounts();
+
             foreach ($accounts->getItems() as $account) {
+
                 $accountId = $account->getId();
                 $properties = $this->analytics->management_webproperties->listManagementWebproperties($accountId);
+
                 foreach ($properties->getItems() as $property) {
+
                     $propertyId = $property->getId();
                     $profiles = $this->analytics->management_profiles->listManagementProfiles($accountId, $propertyId);
+
                     foreach ($profiles->getItems() as $profile) {
+
                         $profileList[$profile->id] = $profile->name;
                     }
                 }
             }
-        } catch(Exception $e) {
+        } catch (Exception $e) {
+
             $this->error = $e->getMessage();
             return $profileList;
         }
 
         if (!$profileList) {
+
             $this->error = 'No Google Analytics profiles were found';
         }
 
@@ -107,8 +122,10 @@ class GoogleAnalyticsService
     {
         $profileId = setting('analytics.analytics-profile');
         if (!$profileId) {
+
             $this->error = 'Please select a profile from the Hatchly Google Analytics settings page';
         }
+
         return $profileId;
     }
 
@@ -123,6 +140,7 @@ class GoogleAnalyticsService
         $this->client->addScope(Google_Service_Analytics::ANALYTICS_READONLY);
         $this->client->setAuthConfig(base_path('gapi-client.json'));
         $this->client->setApplicationName('Hatchly Google Analytics');
+        $this->client->setAccessType('offline');
         $this->client->setRedirectUri(
             URL::to(config('hatchly.core.admin-url') . '/settings/analytics/oauth')
         );
@@ -134,27 +152,33 @@ class GoogleAnalyticsService
             // Not yet logged in
             return;
         }
-        
+
         // Handle token request/refresh
         try {
+
             $settingToken = Setting::firstOrNew(['key' => 'analytics.oauth-token']);
             if ($settingToken->value) {
+
+                $this->client->setAccessToken($settingToken->value);
+
                 if ($this->client->isAccessTokenExpired()) {
-                    $token = $this->client->fetchAccessTokenWithRefreshToken($settingToken->value);
+
+                    $refreshToken = json_decode($settingToken->value)->refresh_token;
+                    $token = $this->client->fetchAccessTokenWithRefreshToken($refreshToken);
                 }
             } else {
+
                 $token = $this->client->fetchAccessTokenWithAuthCode($authCode);
             }
+
             if (isset($token['access_token'])) {
-                // TODO: Investigate how/where this should be stored.
-                // It probably doesn't need to be a Setting
+
                 $settingToken->value = json_encode($token);
                 $settingToken->save();
             }
-            if ($settingToken->value) {
-                $this->client->setAccessToken($settingToken->value);
-            }
-        } catch(Exception $e) {
+
+        } catch (Exception $e) {
+
             $this->error = $e->getMessage();
         }
     }
@@ -165,7 +189,9 @@ class GoogleAnalyticsService
     protected function getStats($type, $end, $start, $metrics)
     {
         $class = $this;
+
         $getData = function () use ($class, $start, $end, $metrics) {
+
             $class->makeClient();
 
             $profileId = $this->getProfileId();
@@ -178,14 +204,18 @@ class GoogleAnalyticsService
 
             // Attempt to retrieve analytics data
             try {
+
                 $rows = $class->analytics->data_ga->get('ga:' . $profileId, $end, $start, $metrics)->getRows();
-            } catch(Exception $e) {
+            
+            } catch (Exception $e) {
+
                 $class->error = $e->getMessage();
                 return [];
             }
 
             // Organise the data returned into a nicer format
             foreach ($rows[0] as $i => $row) {
+
                 $metrics = array_values($class->metrics);
                 $data[$metrics[$i]] = is_float(+$row) ? number_format($row, 2) : number_format($row);
             }
@@ -194,8 +224,11 @@ class GoogleAnalyticsService
         };
 
         if (setting('analytics.cache-duration')) {
+
             return Cache::remember('ga---' . $type, setting('analytics.cache-duration'), $getData);
+        
         } else {
+
             return $getData();
         }
     }
