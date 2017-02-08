@@ -138,12 +138,11 @@ class GoogleAnalyticsService
 
         $this->client = new Google_Client();
         $this->client->addScope(Google_Service_Analytics::ANALYTICS_READONLY);
-        $this->client->setAuthConfig(base_path('gapi-client.json'));
+        $this->client->setClientId('383323737772-0gg6vjt7nft8f1pf75u2t4kfg2j4ag54.apps.googleusercontent.com');
+        $this->client->setClientSecret('ikQH-1m046-a3rRti51--XiH');
         $this->client->setApplicationName('Hatchly Google Analytics');
-        $this->client->setAccessType('offline');
-        $this->client->setRedirectUri(
-            URL::to(config('hatchly.core.admin-url') . '/settings/analytics/oauth')
-        );
+        $this->client->setState(url()->current());
+        $this->client->setRedirectUri(route('hatchly.settings.analytics.oauth'));
 
         $this->analytics = new Google_Service_Analytics($this->client);
 
@@ -153,7 +152,7 @@ class GoogleAnalyticsService
             return;
         }
 
-        // Handle token request/refresh
+        // Handle token request
         try {
 
             $settingToken = Setting::firstOrNew(['key' => 'analytics.oauth-token']);
@@ -163,15 +162,13 @@ class GoogleAnalyticsService
 
                 if ($this->client->isAccessTokenExpired()) {
 
-                    $refreshToken = json_decode($settingToken->value)->refresh_token;
-                    $token = $this->client->fetchAccessTokenWithRefreshToken($refreshToken);
+                    $settingToken->value = '';
+                    $settingToken->save();
+                    return redirect($this->client->getAuthUrl());
                 }
             } else {
 
                 $token = $this->client->fetchAccessTokenWithAuthCode($authCode);
-            }
-
-            if (isset($token['access_token'])) {
 
                 $settingToken->value = json_encode($token);
                 $settingToken->save();
