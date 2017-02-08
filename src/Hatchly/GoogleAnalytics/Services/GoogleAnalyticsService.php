@@ -181,6 +181,7 @@ class GoogleAnalyticsService
                 $rows = $class->analytics->data_ga->get('ga:' . $profileId, $end, $start, $metrics)->getRows();
             } catch(Exception $e) {
                 $class->error = $e->getMessage();
+                return [];
             }
 
             // Organise the data returned into a nicer format
