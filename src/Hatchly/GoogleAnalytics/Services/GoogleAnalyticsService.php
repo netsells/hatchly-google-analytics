@@ -129,7 +129,7 @@ class GoogleAnalyticsService
     }
 
     // Handle token request and reauth if expired
-    private function handleToken()
+    private function handleToken($authCode)
     {
         try {
 
@@ -142,7 +142,7 @@ class GoogleAnalyticsService
 
                     $settingToken->value = '';
                     $settingToken->save();
-                    return redirect($this->client->getAuthUrl());
+                    return redirect($this->client->createAuthUrl());
                 }
             } else {
 
@@ -181,7 +181,7 @@ class GoogleAnalyticsService
             return;
         }
 
-        $this->handleToken();
+        $this->handleToken($authCode);
     }
 
     // $type is a descriptive name for caching
