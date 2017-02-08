@@ -29,15 +29,18 @@ class GoogleAnalyticsController extends BaseController
 
         $setting = Setting::firstOrNew(['key' => 'analytics.oauth-authenticated']);
 
-        if (!empty($authCode)) {
+        if ($authCode) {
+
             $setting->value = 1;
             $setting->save();
+
             return redirect($redirectUrl)
                 ->withSuccesses('OAuth 2 authorisation code has been set successfully');
         }
 
         $setting->value = 0;
         $setting->save();
+        
         return redirect($redirectUrl)
             ->withNotices('OAuth 2 authorisation code was not provided');
     }

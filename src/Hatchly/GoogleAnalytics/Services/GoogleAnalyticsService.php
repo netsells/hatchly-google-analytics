@@ -39,7 +39,6 @@ class GoogleAnalyticsService
 
             return $this->error;
         }
-        return '';
     }
 
     // Returns a list of analytics profiles on the connected account
@@ -129,30 +128,9 @@ class GoogleAnalyticsService
         return $profileId;
     }
 
-    // Create Google API client and request token if necessary
-    private function makeClient()
+    // Handle token request and reauth if expired
+    private function handleToken()
     {
-        if ($this->client) {
-            return;
-        }
-
-        $this->client = new Google_Client();
-        $this->client->addScope(Google_Service_Analytics::ANALYTICS_READONLY);
-        $this->client->setClientId('383323737772-0gg6vjt7nft8f1pf75u2t4kfg2j4ag54.apps.googleusercontent.com');
-        $this->client->setClientSecret('ikQH-1m046-a3rRti51--XiH');
-        $this->client->setApplicationName('Hatchly Google Analytics');
-        $this->client->setState(url()->current());
-        $this->client->setRedirectUri(route('hatchly.settings.analytics.oauth'));
-
-        $this->analytics = new Google_Service_Analytics($this->client);
-
-        $authCode = setting('analytics.oauth-authorisation-code');
-        if (!$authCode) {
-            // Not yet logged in
-            return;
-        }
-
-        // Handle token request
         try {
 
             $settingToken = Setting::firstOrNew(['key' => 'analytics.oauth-token']);
@@ -178,6 +156,32 @@ class GoogleAnalyticsService
 
             $this->error = $e->getMessage();
         }
+    }
+
+    // Create Google API client and request token if necessary
+    private function makeClient()
+    {
+        if ($this->client) {
+            return;
+        }
+
+        $this->client = new Google_Client();
+        $this->client->addScope(Google_Service_Analytics::ANALYTICS_READONLY);
+        $this->client->setClientId('383323737772-0gg6vjt7nft8f1pf75u2t4kfg2j4ag54.apps.googleusercontent.com');
+        $this->client->setClientSecret('ikQH-1m046-a3rRti51--XiH');
+        $this->client->setApplicationName('Hatchly Google Analytics');
+        $this->client->setState(url()->current());
+        $this->client->setRedirectUri(route('hatchly.settings.analytics.oauth'));
+
+        $this->analytics = new Google_Service_Analytics($this->client);
+
+        $authCode = setting('analytics.oauth-authorisation-code');
+        if (!$authCode) {
+            // Not yet logged in
+            return;
+        }
+
+        $this->handleToken();
     }
 
     // $type is a descriptive name for caching

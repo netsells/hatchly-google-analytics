@@ -27,15 +27,15 @@ class GoogleAnalyticsServiceProvider extends ServiceProvider
 
     public function registerGoogleAnalyticsSettings()
     {
-        $this->app['module-manager']->promiseClosureForModule('Hatchly\Settings\SettingModule', function ($app) {
+        $this->app['module-manager']
+            ->moduleRequiresModule('Hatchly\Settings\SettingModule')
+            ->promiseClosureForModule('Hatchly\Settings\SettingModule', function ($app) {
 
             SettingModule::registerSettingPageExtension($app->make(AnalyticsSettingPage::class));
             SettingModule::registerSettingExtension($app->make(OauthAuthenticatedSetting::class));
 
             if (setting('analytics.oauth-authenticated')) {
 
-                //SettingModule::registerSettingExtension($app->make(OauthAuthorisationCodeSetting::class));
-                //SettingModule::registerSettingExtension($app->make(OauthTokenSetting::class));
                 SettingModule::registerSettingExtension($app->make(AnalyticsProfileSetting::class));
                 SettingModule::registerSettingExtension($app->make(CacheDurationSetting::class));
             }
