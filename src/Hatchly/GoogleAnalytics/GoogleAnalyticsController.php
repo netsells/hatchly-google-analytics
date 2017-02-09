@@ -17,11 +17,16 @@ class GoogleAnalyticsController extends BaseController
         $this->analyticsService = $analyticsService;
     }
 
-    // The callback that Google's OAuth 2 server will redirect to
+    /**
+     * The callback that Google's OAuth 2 server will redirect to
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
+     */
     public function oauthCallback(Request $request)
     {
-        $analyticsSettingsPage = config('hatchly.core.admin-url') . '/settings/analytics';
-        $authCode = $request->get('code') ? $request->get('code') : '';
+        $redirectUrl = $request->get('state');
+        $authCode = $request->get('code', '');
 
         $setting = Setting::firstOrNew(['key' => 'analytics.oauth-authorisation-code']);
         $setting->value = $authCode;
@@ -29,20 +34,27 @@ class GoogleAnalyticsController extends BaseController
 
         $setting = Setting::firstOrNew(['key' => 'analytics.oauth-authenticated']);
 
-        if (!empty($authCode)) {
+        if ($authCode) {
+
             $setting->value = 1;
             $setting->save();
-            return redirect($analyticsSettingsPage)
-                ->withSuccesses('OAuth 2 authorisation code has been set successfully');
-        } else {
-            $setting->value = 0;
-            $setting->save();
-            return redirect($analyticsSettingsPage)
-                ->withNotices('OAuth 2 authorisation code was not provided');
+
+            return redirect($redirectUrl);
         }
+
+        $setting->value = 0;
+        $setting->save();
+        
+        return redirect($redirectUrl)
+            ->withNotices('OAuth 2 authorisation code was not provided');
     }
 
-    // Remove authorisation and clear settings values
+
+    /**
+     * Remove authorisation and clear settings values
+     *
+     * @return mixed
+     */
     public function deauth()
     {
         $this->analyticsService->deauthorise();
