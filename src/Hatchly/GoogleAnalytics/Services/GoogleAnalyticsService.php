@@ -222,7 +222,7 @@ class GoogleAnalyticsService
         $this->client->setApplicationName('Hatchly Google Analytics');
         $tableFlip = base64_encode('(╯°□°）╯︵┻━┻');
         $this->client->setState(url()->current() . $tableFlip . route('hatchly.settings.analytics.oauth'));
-        $this->client->setRedirectUri('http://hatchly.io/proxy.php');
+        $this->client->setRedirectUri('https://analytics-proxy.hatchly.io/proxy.php');
 
         $this->analytics = new Google_Service_Analytics($this->client);
 
