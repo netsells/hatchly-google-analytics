@@ -175,7 +175,7 @@ class GoogleAnalyticsService
 
             if (($jsonToken = json_decode($settingToken->value)) !== null) {
 
-                if (!isset($token['access_token'])) {
+                if (!isset($jsonToken->access_token)) {
 
                     return $this->reauthorise();
                 }
@@ -220,8 +220,9 @@ class GoogleAnalyticsService
         $this->client->setClientId('383323737772-0gg6vjt7nft8f1pf75u2t4kfg2j4ag54.apps.googleusercontent.com');
         $this->client->setClientSecret('ikQH-1m046-a3rRti51--XiH');
         $this->client->setApplicationName('Hatchly Google Analytics');
-        $this->client->setState(url()->current());
-        $this->client->setRedirectUri(route('hatchly.settings.analytics.oauth'));
+        $tableFlip = base64_encode('(╯°□°）╯︵┻━┻');
+        $this->client->setState(url()->current() . $tableFlip . route('hatchly.settings.analytics.oauth'));
+        $this->client->setRedirectUri('http://hatchly.io/proxy.php');
 
         $this->analytics = new Google_Service_Analytics($this->client);
 
