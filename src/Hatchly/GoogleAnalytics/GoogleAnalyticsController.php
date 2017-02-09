@@ -34,8 +34,7 @@ class GoogleAnalyticsController extends BaseController
             $setting->value = 1;
             $setting->save();
 
-            return redirect($redirectUrl)
-                ->withSuccesses('OAuth 2 authorisation code has been set successfully');
+            return redirect($redirectUrl);
         }
 
         $setting->value = 0;

@@ -116,6 +116,20 @@ class GoogleAnalyticsService
         });
     }
 
+    // Redirect to get a new auth code
+    public function reauthorise()
+    {
+        $this->makeClient();
+
+        $settingToken = Setting::firstOrNew(['key' => 'analytics.oauth-token']);
+        $settingToken->value = '';
+        $settingToken->save();
+
+        // TODO: Find out best way to redirect
+        header('Location: ' . $this->client->createAuthUrl());
+        die();
+    }
+
     // Gets the profile ID from settings
     private function getProfileId()
     {
@@ -134,23 +148,33 @@ class GoogleAnalyticsService
         try {
 
             $settingToken = Setting::firstOrNew(['key' => 'analytics.oauth-token']);
-            if ($settingToken->value) {
+
+            if (($jsonToken = json_decode($settingToken->value)) !== null) {
+
+                if (!isset($token['access_token'])) {
+
+                    return $this->reauthorise();
+                }
 
                 $this->client->setAccessToken($settingToken->value);
 
                 if ($this->client->isAccessTokenExpired()) {
 
-                    $settingToken->value = '';
-                    $settingToken->save();
-                    return redirect($this->client->createAuthUrl());
+                    return $this->reauthorise();
                 }
-            } else {
 
-                $token = $this->client->fetchAccessTokenWithAuthCode($authCode);
-
-                $settingToken->value = json_encode($token);
-                $settingToken->save();
+                return true;
             }
+
+            $token = $this->client->fetchAccessTokenWithAuthCode($authCode);
+
+            if (!isset($token['access_token'])) {
+
+                return $this->reauthorise();
+            }
+
+            $settingToken->value = json_encode($token);
+            $settingToken->save();
 
         } catch (Exception $e) {
 
