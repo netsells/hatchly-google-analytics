@@ -27,6 +27,9 @@ class GoogleAnalyticsService
     protected $analytics;
     protected $error;
 
+    /**
+     * @return string
+     */
     public function getError()
     {
         if ($this->error) {
@@ -41,8 +44,9 @@ class GoogleAnalyticsService
         }
     }
 
-    // Returns a list of analytics profiles on the connected account
-    // Returns empty array if no profiles found
+    /**
+     * @return array a list of analytics profiles on the connected account
+     */
     public function getProfiles()
     {
         $this->makeClient();
@@ -84,24 +88,33 @@ class GoogleAnalyticsService
     }
 
 
-    public function fetchStats()
+    /**
+     * @return array
+     */
+    public function getStats()
     {
         return [
-            'This Month' => $this->getStats('month', '30daysAgo', 'today', $this->metrics),
-            'This Week' => $this->getStats('week', '7daysAgo', 'today', $this->metrics),
-            'Yesterday' => $this->getStats('yesterday', 'yesterday', 'today', $this->metrics),
-            'Today' => $this->getStats('today', 'today', 'today', $this->metrics),
+            'Today' => $this->fetchStats('today', 'today', 'today', $this->metrics),
+            'Yesterday' => $this->fetchStats('yesterday', 'yesterday', 'today', $this->metrics),
+            'Week' => $this->fetchStats('week', '7daysAgo', 'today', $this->metrics),
+            'Month' => $this->fetchStats('month', '30daysAgo', 'today', $this->metrics),
         ];
     }
 
-    // Get the URL to request authorisation for OAuth 2
+    /**
+     * Get the URL to request authorisation for OAuth 2
+     *
+     * @return mixed
+     */
     public function getAuthUrl()
     {
         $this->makeClient();
         return $this->client->createAuthUrl();
     }
 
-    // Revokes OAuth 2 token and deletes auth code
+    /**
+     * Revokes OAuth 2 token and deletes auth code
+     */
     public function deauthorise()
     {
         $this->makeClient();
@@ -116,7 +129,9 @@ class GoogleAnalyticsService
         });
     }
 
-    // Redirect to get a new auth code
+    /**
+     * Redirect to get a new auth code
+     */
     public function reauthorise()
     {
         $this->makeClient();
@@ -130,7 +145,11 @@ class GoogleAnalyticsService
         die();
     }
 
-    // Gets the profile ID from settings
+    /**
+     * Gets the profile ID from settings
+     *
+     * @return string
+     */
     private function getProfileId()
     {
         $profileId = setting('analytics.analytics-profile');
@@ -142,7 +161,12 @@ class GoogleAnalyticsService
         return $profileId;
     }
 
-    // Handle token request and reauth if expired
+    /**
+     * Handle token request and reauth if expired
+     *
+     * @param $authCode
+     * @return bool|void
+     */
     private function handleToken($authCode)
     {
         try {
@@ -182,7 +206,9 @@ class GoogleAnalyticsService
         }
     }
 
-    // Create Google API client and request token if necessary
+    /**
+     * Create Google API client and request token if necessary
+     */
     private function makeClient()
     {
         if ($this->client) {
@@ -208,10 +234,14 @@ class GoogleAnalyticsService
         $this->handleToken($authCode);
     }
 
-    // $type is a descriptive name for caching
-    // $start and $end define the time/date range to be retrieved
-    // $metrics is an array of analytics metrics to retrieve
-    protected function getStats($type, $end, $start, $metrics)
+    /**
+     * @param string $type a descriptive name for caching
+     * @param string $end the end date/time to be retrieved
+     * @param string $start the start date/time to be retrieved
+     * @param array $metrics an array of analytics metrics to retrieve
+     * @return array
+     */
+    protected function fetchStats($type, $end, $start, $metrics)
     {
         $class = $this;
 

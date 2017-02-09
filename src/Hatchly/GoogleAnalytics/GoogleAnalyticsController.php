@@ -17,7 +17,12 @@ class GoogleAnalyticsController extends BaseController
         $this->analyticsService = $analyticsService;
     }
 
-    // The callback that Google's OAuth 2 server will redirect to
+    /**
+     * The callback that Google's OAuth 2 server will redirect to
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
+     */
     public function oauthCallback(Request $request)
     {
         $redirectUrl = $request->get('state');
@@ -44,7 +49,12 @@ class GoogleAnalyticsController extends BaseController
             ->withNotices('OAuth 2 authorisation code was not provided');
     }
 
-    // Remove authorisation and clear settings values
+
+    /**
+     * Remove authorisation and clear settings values
+     *
+     * @return mixed
+     */
     public function deauth()
     {
         $this->analyticsService->deauthorise();
