@@ -138,7 +138,7 @@ class GoogleAnalyticsService
     }
 
     /**
-     * Redirect to get a new auth code
+     * Redirect to get a new auth code (This method should not be needed any more)
      */
     public function reauthorise()
     {
@@ -186,7 +186,7 @@ class GoogleAnalyticsService
 
                 if (!isset($jsonToken->access_token)) {
 
-                    return $this->reauthorise();
+                    throw new Exception("Please reauthorise your Google Analytics account in the Hatchly settings page");
                 }
 
                 $this->client->setAccessToken($settingToken->value);
@@ -205,7 +205,7 @@ class GoogleAnalyticsService
 
             if (!isset($token['access_token'])) {
 
-                return $this->reauthorise();
+                throw new Exception("Please reauthorise your Google Analytics account in the Hatchly settings page");
             }
 
             $settingRefresh->value = $token['refresh_token'];
