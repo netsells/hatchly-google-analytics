@@ -183,13 +183,20 @@ class GoogleAnalyticsService
                 $class->error = $e->getMessage();
             }
 
+            // Check for lack of data
+            if (!isset($rows[0])) {
+
+                $class->error = "There is not yet any analytics data on this profile";
+                return [];
+            }
+
             // Organise the data returned into a nicer format
             foreach ($rows[0] as $i => $row) {
                 $metrics = array_values($class->metrics);
                 $data[$metrics[$i]] = is_float(+$row) ? number_format($row, 2) : number_format($row);
             }
 
-            return $data;
+            return isset($data) ? $data : [];
         };
 
         if (setting('analytics.cache-duration')) {
