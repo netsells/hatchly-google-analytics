@@ -173,13 +173,14 @@ class GoogleAnalyticsService
      * Handle token request and reauth if expired
      *
      * @param $authCode
-     * @return bool|void
+     * @return mixed
      */
     private function handleToken($authCode)
     {
         try {
 
             $settingToken = Setting::firstOrNew(['key' => 'analytics.oauth-token']);
+            $settingRefresh = Setting::firstOrNew(['key' => 'analytics.oauth-refresh']);
 
             if (($jsonToken = json_decode($settingToken->value)) !== null) {
 
@@ -190,21 +191,25 @@ class GoogleAnalyticsService
 
                 $this->client->setAccessToken($settingToken->value);
 
-                if ($this->client->isAccessTokenExpired()) {
+                if (!$this->client->isAccessTokenExpired()) {
 
-                    return $this->reauthorise();
+                    return true;
                 }
 
-                return true;
-            }
+                $this->client->fetchAccessTokenWithRefreshToken($settingRefresh->value);
 
-            $token = $this->client->fetchAccessTokenWithAuthCode($authCode);
+            } else {
+
+                $token = $this->client->fetchAccessTokenWithAuthCode($authCode);
+            }
 
             if (!isset($token['access_token'])) {
 
                 return $this->reauthorise();
             }
 
+            $settingRefresh->value = $token['refresh_token'];
+            $settingRefresh->save();
             $settingToken->value = json_encode($token);
             $settingToken->save();
 
@@ -228,6 +233,8 @@ class GoogleAnalyticsService
         $this->client->setClientId('383323737772-0gg6vjt7nft8f1pf75u2t4kfg2j4ag54.apps.googleusercontent.com');
         $this->client->setClientSecret('ikQH-1m046-a3rRti51--XiH');
         $this->client->setApplicationName('Hatchly Google Analytics');
+        $this->client->setAccessType("offline");
+        $this->client->setApprovalPrompt("force");
         $tableFlip = base64_encode('(╯°□°）╯︵┻━┻');
         $this->client->setState(url()->current() . $tableFlip . route('hatchly.settings.analytics.oauth'));
         $this->client->setRedirectUri('https://analytics-proxy.hatchly.io/proxy.php');
