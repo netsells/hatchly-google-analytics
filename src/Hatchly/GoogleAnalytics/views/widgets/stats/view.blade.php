@@ -21,7 +21,7 @@
                         <tr>
                             <th>{{ $title }}</th>
                             @foreach($stats as $stat)
-                                <td>{{ $stat[$metric] }}</td>
+                                <td>{{ isset($stat[$metric]) ? $stat[$metric] : '-' }}</td>
                             @endforeach
                         </tr>
                         @endforeach
