@@ -93,12 +93,20 @@ class GoogleAnalyticsService
      */
     public function getStats()
     {
-        return [
+        $data = [
             'Today' => $this->fetchStats('today', 'today', 'today', $this->metrics),
             'Yesterday' => $this->fetchStats('yesterday', 'yesterday', 'today', $this->metrics),
             'Week' => $this->fetchStats('week', '7daysAgo', 'today', $this->metrics),
             'Month' => $this->fetchStats('month', '30daysAgo', 'today', $this->metrics),
         ];
+
+        if (empty($data['Today'])) {
+
+            $this->error = "There is not yet any analytics data on this profile";
+            return [];
+        }
+
+        return $data;
     }
 
     /**
@@ -272,7 +280,6 @@ class GoogleAnalyticsService
             // Check for lack of data
             if (!isset($rows[0])) {
 
-                $class->error = "There is not yet any analytics data on this profile";
                 return [];
             }
 
