@@ -95,7 +95,7 @@ class GoogleAnalyticsService
     {
         $data = [
             'Today' => $this->fetchStats('today', 'today', 'today', $this->metrics),
-            'Yesterday' => $this->fetchStats('yesterday', 'yesterday', 'today', $this->metrics),
+            'Yesterday' => $this->fetchStats('yesterday', 'yesterday', 'yesterday', $this->metrics),
             'Week' => $this->fetchStats('week', '7daysAgo', 'today', $this->metrics),
             'Month' => $this->fetchStats('month', '30daysAgo', 'today', $this->metrics),
         ];
