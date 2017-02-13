@@ -8,7 +8,7 @@ class StatsWidget extends Widget
     {
         return view('hatchly-analytics::widgets.stats.view', [
             'metrics' => $this->analyticsService->metrics,
-            'stats' => $this->analyticsService->fetchStats(),
+            'stats' => $this->analyticsService->getStats(),
             'error' => $this->analyticsService->getError(),
         ]);
     }
