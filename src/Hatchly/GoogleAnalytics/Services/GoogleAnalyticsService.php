@@ -100,7 +100,7 @@ class GoogleAnalyticsService
             'Month' => $this->fetchStats('month', '30daysAgo', 'today', $this->metrics),
         ];
 
-        if (empty($data['Today'])) {
+        if (!$this->error && empty($data['Today'])) {
 
             $this->error = "There is not yet any analytics data on this profile";
             return [];
