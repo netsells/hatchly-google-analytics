@@ -196,7 +196,7 @@ class GoogleAnalyticsService
                     return true;
                 }
 
-                $this->client->fetchAccessTokenWithRefreshToken($settingRefresh->value);
+                $token = $this->client->fetchAccessTokenWithRefreshToken($settingRefresh->value);
 
             } else {
 
