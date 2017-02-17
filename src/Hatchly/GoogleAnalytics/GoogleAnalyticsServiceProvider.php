@@ -35,7 +35,6 @@ class GoogleAnalyticsServiceProvider extends ServiceProvider
                 SettingModule::registerSettingExtension($app->make(OauthAuthenticatedSetting::class));
 
                 if (setting('analytics.oauth-authenticated')) {
-
                     SettingModule::registerSettingExtension($app->make(AnalyticsProfileSetting::class));
                     SettingModule::registerSettingExtension($app->make(CacheDurationSetting::class));
                 }

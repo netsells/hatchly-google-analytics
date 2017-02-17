@@ -35,7 +35,6 @@ class GoogleAnalyticsController extends BaseController
         $setting = Setting::firstOrNew(['key' => 'analytics.oauth-authenticated']);
 
         if ($authCode) {
-
             $setting->value = 1;
             $setting->save();
 

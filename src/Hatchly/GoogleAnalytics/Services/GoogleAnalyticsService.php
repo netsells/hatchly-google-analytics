@@ -33,10 +33,8 @@ class GoogleAnalyticsService
     public function getError()
     {
         if ($this->error) {
-
             // Check if the error is in JSON format
             if (($errorJson = json_decode($this->error)) !== null) {
-
                 return isset($errorJson->error->message) ? $errorJson->error->message : 'An unexpected error occurred';
             }
 
@@ -54,33 +52,27 @@ class GoogleAnalyticsService
         $profileList = [];
 
         try {
-
             $accounts = $this->analytics->management_accounts->listManagementAccounts();
 
             foreach ($accounts->getItems() as $account) {
-
                 $accountId = $account->getId();
                 $properties = $this->analytics->management_webproperties->listManagementWebproperties($accountId);
 
                 foreach ($properties->getItems() as $property) {
-
                     $propertyId = $property->getId();
                     $profiles = $this->analytics->management_profiles->listManagementProfiles($accountId, $propertyId);
 
                     foreach ($profiles->getItems() as $profile) {
-
                         $profileList[$profile->id] = $profile->name;
                     }
                 }
             }
         } catch (Exception $e) {
-
             $this->error = $e->getMessage();
             return $profileList;
         }
 
         if (!$profileList) {
-
             $this->error = 'No Google Analytics profiles were found';
         }
 
@@ -101,7 +93,6 @@ class GoogleAnalyticsService
         ];
 
         if (!$this->error && empty($data['Today'])) {
-
             $this->error = "There is not yet any analytics data on this profile";
             return [];
         }
@@ -162,7 +153,6 @@ class GoogleAnalyticsService
     {
         $profileId = setting('analytics.analytics-profile');
         if (!$profileId) {
-
             $this->error = 'Please select a profile from the Hatchly Google Analytics settings page';
         }
 
@@ -178,33 +168,26 @@ class GoogleAnalyticsService
     private function handleToken($authCode)
     {
         try {
-
             $settingToken = Setting::firstOrNew(['key' => 'analytics.oauth-token']);
             $settingRefresh = Setting::firstOrNew(['key' => 'analytics.oauth-refresh']);
 
             if (($jsonToken = json_decode($settingToken->value)) !== null) {
-
                 if (!isset($jsonToken->access_token)) {
-
                     throw new Exception("Please reauthorise your Google Analytics account in the Hatchly settings page");
                 }
 
                 $this->client->setAccessToken($settingToken->value);
 
                 if (!$this->client->isAccessTokenExpired()) {
-
                     return true;
                 }
 
                 $token = $this->client->fetchAccessTokenWithRefreshToken($settingRefresh->value);
-
             } else {
-
                 $token = $this->client->fetchAccessTokenWithAuthCode($authCode);
             }
 
             if (!isset($token['access_token'])) {
-
                 throw new Exception("Please reauthorise your Google Analytics account in the Hatchly settings page");
             }
 
@@ -212,9 +195,7 @@ class GoogleAnalyticsService
             $settingRefresh->save();
             $settingToken->value = json_encode($token);
             $settingToken->save();
-
         } catch (Exception $e) {
-
             $this->error = $e->getMessage();
         }
     }
@@ -275,24 +256,19 @@ class GoogleAnalyticsService
 
             // Attempt to retrieve analytics data
             try {
-
                 $rows = $class->analytics->data_ga->get('ga:' . $profileId, $end, $start, $metrics)->getRows();
-            
             } catch (Exception $e) {
-
                 $class->error = $e->getMessage();
                 return [];
             }
 
             // Check for lack of data
             if (!isset($rows[0])) {
-
                 return [];
             }
 
             // Organise the data returned into a nicer format
             foreach ($rows[0] as $i => $row) {
-
                 $metrics = array_values($class->metrics);
                 $data[$metrics[$i]] = is_float(+$row) ? number_format($row, 2) : number_format($row);
             }
@@ -301,11 +277,8 @@ class GoogleAnalyticsService
         };
 
         if (setting('analytics.cache-duration')) {
-
             return Cache::remember('ga---' . $type, setting('analytics.cache-duration'), $getData);
-        
         } else {
-
             return $getData();
         }
     }
