@@ -18,11 +18,13 @@ class GoogleAnalyticsServiceProvider extends ServiceProvider
     {
         $this->loadViewsFrom(__DIR__.'/views', 'hatchly-analytics');
         $this->registerRoutes();
+        
+        $this->registerGoogleAnalyticsSettings();
     }
 
     public function register()
     {
-        $this->registerGoogleAnalyticsSettings();
+        
     }
 
     public function registerGoogleAnalyticsSettings()
