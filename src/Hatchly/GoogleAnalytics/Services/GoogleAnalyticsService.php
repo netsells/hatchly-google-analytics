@@ -63,7 +63,7 @@ class GoogleAnalyticsService
                     $profiles = $this->analytics->management_profiles->listManagementProfiles($accountId, $propertyId);
 
                     foreach ($profiles->getItems() as $profile) {
-                        $profileList[$profile->id] = $profile->name;
+                        $profileList[$profile->id] = $profile->name . ' (' . $profile->id . ')';
                     }
                 }
             }
