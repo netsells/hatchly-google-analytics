@@ -11,6 +11,7 @@ use Hatchly\GoogleAnalytics\Extensions\OauthAuthorisationCodeSetting;
 use Hatchly\GoogleAnalytics\Extensions\OauthTokenSetting;
 use Hatchly\GoogleAnalytics\Extensions\AnalyticsProfileSetting;
 use Hatchly\GoogleAnalytics\Extensions\CacheDurationSetting;
+use PDOException;
 
 class GoogleAnalyticsServiceProvider extends ServiceProvider
 {
@@ -18,13 +19,15 @@ class GoogleAnalyticsServiceProvider extends ServiceProvider
     {
         $this->loadViewsFrom(__DIR__.'/views', 'hatchly-analytics');
         $this->registerRoutes();
-        
-        $this->registerGoogleAnalyticsSettings();
     }
 
     public function register()
     {
-        
+        try {
+            $this->registerGoogleAnalyticsSettings();
+        } catch(PDOException $e){
+            // We can assume the database has not yet been created
+        }
     }
 
     public function registerGoogleAnalyticsSettings()
