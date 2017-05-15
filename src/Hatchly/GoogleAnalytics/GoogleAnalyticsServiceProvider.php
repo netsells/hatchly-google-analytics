@@ -23,11 +23,7 @@ class GoogleAnalyticsServiceProvider extends ServiceProvider
 
     public function register()
     {
-        try {
-            $this->registerGoogleAnalyticsSettings();
-        } catch(PDOException $e){
-            // We can assume the database has not yet been created
-        }
+        $this->registerGoogleAnalyticsSettings();
     }
 
     public function registerGoogleAnalyticsSettings()
@@ -38,11 +34,8 @@ class GoogleAnalyticsServiceProvider extends ServiceProvider
 
                 SettingModule::registerSettingPageExtension($app->make(AnalyticsSettingPage::class));
                 SettingModule::registerSettingExtension($app->make(OauthAuthenticatedSetting::class));
-
-                if (setting('analytics.oauth-authenticated')) {
-                    SettingModule::registerSettingExtension($app->make(AnalyticsProfileSetting::class));
-                    SettingModule::registerSettingExtension($app->make(CacheDurationSetting::class));
-                }
+                SettingModule::registerSettingExtension($app->make(AnalyticsProfileSetting::class));
+                SettingModule::registerSettingExtension($app->make(CacheDurationSetting::class));
             });
     }
 

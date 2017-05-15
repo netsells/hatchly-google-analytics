@@ -27,4 +27,14 @@ class CacheDurationSetting extends BaseSetting implements SettingInterface
     {
         return 5;
     }
+
+    public function view(Setting $setting = null)
+    {
+        if (!setting('analytics.oauth-authenticated')) {
+            // Don't show setting if not authenticated with Google
+            return '';
+        }
+
+        return parent::view($setting);
+    }
 }

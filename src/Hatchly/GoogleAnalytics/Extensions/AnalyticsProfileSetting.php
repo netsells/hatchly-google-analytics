@@ -38,6 +38,11 @@ class AnalyticsProfileSetting extends BaseSetting implements SettingInterface
 
     public function view(Setting $setting = null)
     {
+        if (!setting('analytics.oauth-authenticated')) {
+            // Don't show setting if not authenticated with Google
+            return '';
+        }
+
         $profiles = $this->analyticsService->getProfiles();
 
         return view($this->viewPath(), [
